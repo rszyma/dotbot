@@ -70,14 +70,44 @@ class Link(Plugin):
                 ignore_missing = target.get("ignore-missing", ignore_missing)
                 exclude_paths = target.get("exclude", exclude_paths)
                 path = self._default_target(link_name, target.get("path"))
+            elif isinstance(target, list):
+                # only for multi if condition
+                path = None
+                for ifitem in target:
+                    iftest = ifitem.get("if", test)
+                    if iftest is None or not self._test_success(iftest):
+                        continue
+
+                    relative = ifitem.get("relative", relative)
+                    canonical_path = ifitem.get("canonicalize", ifitem.get("canonicalize-path", canonical_path))
+                    link_type = ifitem.get("type", link_type)
+                    if link_type not in {"symlink", "hardlink"}:
+                        msg = f"The link type is not recognized: '{link_type}'"
+                        self._log.warning(msg)
+                        success = False
+                        continue
+
+                    force = ifitem.get("force", force)
+                    relink = ifitem.get("relink", relink)
+                    create = ifitem.get("create", create)
+                    use_glob = ifitem.get("glob", use_glob)
+                    base_prefix = ifitem.get("prefix", base_prefix)
+                    ignore_missing = ifitem.get("ignore-missing", ignore_missing)
+                    exclude_paths = ifitem.get("exclude", exclude_paths)
+                    path = self._default_target(link_name, ifitem.get("path"))
+
+                if path is None:
+                    self._log.lowinfo("Skipping %s" % link_name)
+                    continue
             else:
                 path = self._default_target(link_name, target)
             path = normslash(path)
             if test is not None and not self._test_success(test):
                 self._log.info(f"Skipping {link_name}")
                 continue
-            path = os.path.normpath(os.path.expandvars(os.path.expanduser(path)))
-            if use_glob and self._has_glob_chars(path):
+
+            path = os.path.expandvars(os.path.expanduser(path))
+            if use_glob:
                 glob_results = self._create_glob_results(path, exclude_paths)
                 self._log.debug(f"Globs from '{path}': {glob_results}")
                 for glob_full_item in glob_results:
