@@ -1,6 +1,7 @@
 import os
 from argparse import Namespace
 from typing import Any, Dict, List, Optional, Type
+import traceback
 
 from dotbot.context import Context
 from dotbot.messenger import Messenger
@@ -101,6 +102,8 @@ class Dispatcher:
                         except Exception as err:  # noqa: BLE001
                             self._log.error(f"An error was encountered while executing action {action}")
                             self._log.debug(str(err))
+                            self._log.debug(traceback.format_exc())
+
                             if self._exit:
                                 # There was an exception, exit
                                 return False
