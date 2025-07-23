@@ -106,8 +106,8 @@ class Link(Plugin):
                 self._log.info(f"Skipping {link_name}")
                 continue
 
-            path = os.path.expandvars(os.path.expanduser(path))
-            if use_glob:
+            path = os.path.normpath(os.path.expandvars(os.path.expanduser(path)))
+            if use_glob and self._has_glob_chars(path):
                 glob_results = self._create_glob_results(path, exclude_paths)
                 self._log.debug(f"Globs from '{path}': {glob_results}")
                 for glob_full_item in glob_results:
